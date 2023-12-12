@@ -1,0 +1,4 @@
+/scala/project/target/*
+/scala/target/*
+/scala/.idea/*
+/scala/.bsp/*
