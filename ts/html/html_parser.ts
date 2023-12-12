@@ -1,45 +1,24 @@
 import { Parser, ResolveParserRef } from "../core/parser"
 
-class Html {
+type Html = {
     elements: HtmlElement[]
-
-    constructor(elements: HtmlElement[]) {
-        this.elements = elements
-    }
 }
 
-class HtmlElement { }
+type HtmlElement = Tag | HtmlText
 
-class Tag extends HtmlElement {
+type Tag = {
     name: string
     attributes: Attribute[]
     content: Html
-
-    constructor(name: string, attributes: Attribute[], content: Html) {
-        super()
-        this.name = name
-        this.attributes = attributes
-        this.content = content
-    }
 }
 
-class HtmlText extends HtmlElement {
+type HtmlText = {
     value: string
-
-    constructor(value: string) {
-        super()
-        this.value = value
-    }
 }
 
-class Attribute {
+type Attribute = {
     name: string
-    content: string | null
-
-    constructor(name: string, content: string | null) {
-        this.name = name
-        this.content = content
-    }
+    content?: string
 }
 
 export class PrintHtml {
@@ -48,9 +27,9 @@ export class PrintHtml {
     }
 
     static printElem(element: HtmlElement): string {
-        if (element instanceof Tag) {
+        if ("attributes" in element) {
             return `<${element.name} ${PrintHtml.printAttributes(element.attributes)}>${PrintHtml.apply(element.content)}</${element.name}>`
-        } else if (element instanceof HtmlText) {
+        } else if ("value" in element) {
             return element.value
         } else {
             throw new Error("Unknown element type")
@@ -79,13 +58,13 @@ export const HtmlParser = (str: string) => {
     const parseAttribute = (): Attribute => {
         const name = parser.collectUntil(() => parser.peek() === '=' || parser.peek() === ' ' || parser.peek() === '>')
         if (parser.peek() !== '=') {
-            return new Attribute(name, null)
+            return { name: name }
         } else {
             parser.skip("=\"")
             const value = parser.collectUntil(() => parser.peek() === '\"')
             parser.skip("\"")
             parser.skipWhiteSpaces()
-            return new Attribute(name, value)
+            return { name: name, content: value }
         }
     }
 
@@ -93,7 +72,7 @@ export const HtmlParser = (str: string) => {
         if (parser.peek() === '<') {
             return parseTag()
         } else {
-            return new HtmlText(parser.collectUntil(() => parser.peek() === '<'))
+            return { value: parser.collectUntil(() => parser.peek() === '<') }
         }
     }
 
@@ -101,22 +80,21 @@ export const HtmlParser = (str: string) => {
         parser.skip("<")
         parser.skipWhiteSpaces()
         const name = parser.collectUntil(() => parser.peek() === ' ' || parser.peek() === '>')
-        //console.log(name)
         parser.skipWhiteSpaces()
         const attributes = parser.doUntil(parseAttribute, () => parser.peek() === '>')
         parser.skip(">")
         const closing = `</${name}>`
-        if (name.toLowerCase().trim() in ignore) {
-            return new Tag(name, attributes, new Html([]))
+        if (ignore.includes(name.toLowerCase().trim())) {
+            return { name: name, attributes: attributes, content: { elements: [] } }
         } else {
-            const content = new Html(parser.doUntil(parseElement, () => parser.check(closing)))
+            const content = { elements: parser.doUntil(parseElement, () => parser.check(closing)) }
             parser.skip(closing)
-            return new Tag(name, attributes, content)
+            return { name: name, attributes: attributes, content: content }
         }
     }
 
     const parse = (): Html => {
-        return new Html(parser.doUntil(parseElement, parser.hasEnded))
+        return { elements: parser.doUntil(parseElement, parser.hasEnded) }
     }
 
     return parse()

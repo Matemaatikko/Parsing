@@ -55,11 +55,6 @@ export const Parser = (ref: ParserRef) => {
     }
 
     const check = (str: string): boolean => {
-        console.log("================")
-        console.log(peek(str.length))
-        console.log(str)
-        console.log(peek(str.length) === str)
-
         return peek(str.length) === str
     }
 
