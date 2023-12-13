@@ -25,12 +25,7 @@ class Parser:
 
     ##########################################
 
-    def peek(self):
-        if not self.loaded_characters:
-            self.append()
-        return self.loaded_characters[0]
-
-    def peek_n(self, n):
+    def peek(self, n = 1):
         while len(self.loaded_characters) < n:
             self.append()
         return ''.join(self.loaded_characters[:n])

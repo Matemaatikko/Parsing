@@ -53,7 +53,8 @@ class PrintHtml:
 
 
 class HtmlParser(Parser):
-    ignore = ["br", "meta", "img", "input"]
+    ignore = ["br", "meta", "img", "input", "!DOCTYPE"]
+    #TODO skip script/style content parsing
 
     def parse(self):
         return Html(self.do_until(self.parse_element, self.has_ended))
@@ -61,9 +62,9 @@ class HtmlParser(Parser):
     def parse_tag(self):
         self.skip("<")
         self.skip_white_spaces()
-        name = self.collect_until(lambda: self.peek == ' ' or self.peek == '>')
+        name = self.collect_until(lambda: self.peek() == ' ' or self.peek() == '>')
         self.skip_white_spaces()
-        attributes = self.do_until(self.parse_attribute, lambda: self.peek == '>')
+        attributes = self.do_until(self.parse_attribute, lambda: self.peek() == '>')
         self.skip(">")
         closing = f"</{name}>"
         if name.lower().strip() in self.ignore:
@@ -74,18 +75,18 @@ class HtmlParser(Parser):
             return Tag(name, attributes, content)
 
     def parse_attribute(self):
-        name = self.collect_until(lambda: self.peek == '=' or self.peek == ' ' or self.peek == '>')
-        if self.peek != '=':
+        name = self.collect_until(lambda: self.peek() == '=' or self.peek() == ' ' or self.peek() == '>')
+        if self.peek() != '=':
             return Attribute(name, None)
         else:
             self.skip("=\"")
-            value = self.collect_until(lambda: self.peek == '\"')
+            value = self.collect_until(lambda: self.peek() == '\"')
             self.skip("\"")
             self.skip_white_spaces()
             return Attribute(name, value)
 
     def parse_element(self):
-        if self.peek == '<':
+        if self.peek() == '<':
             return self.parse_tag()
         else:
-            return Text(self.collect_until(lambda: self.peek == '<'))
+            return Text(self.collect_until(lambda: self.peek() == '<'))
