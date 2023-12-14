@@ -53,7 +53,7 @@ export const HtmlParser = (str: string) => {
 
     const ref = ResolveParserRef(str)
     const parser = Parser(ref)
-    const ignore: string[] = ["br", "meta", "img", "input"]
+    const ignore: string[] = ["br", "hr", "meta", "img", "input", "!doctype"]
 
     const parseAttribute = (): Attribute => {
         const name = parser.collectUntil(() => parser.peek() === '=' || parser.peek() === ' ' || parser.peek() === '>')
@@ -79,11 +79,14 @@ export const HtmlParser = (str: string) => {
     const parseTag = (): Tag => {
         parser.skip("<")
         parser.skipWhiteSpaces()
+        // TODO Parse comment
+
         const name = parser.collectUntil(() => parser.peek() === ' ' || parser.peek() === '>')
         parser.skipWhiteSpaces()
         const attributes = parser.doUntil(parseAttribute, () => parser.peek() === '>')
         parser.skip(">")
         const closing = `</${name}>`
+        // TODO Skip script/style
         if (ignore.includes(name.toLowerCase().trim())) {
             return { name: name, attributes: attributes, content: { elements: [] } }
         } else {

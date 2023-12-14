@@ -23,6 +23,10 @@ class Text(Element):
     value: str
 
 @dataclass
+class Comment(Element):
+    value: str
+
+@dataclass
 class Attribute:
     name: str
     content: Optional[str]
@@ -53,8 +57,7 @@ class PrintHtml:
 
 
 class HtmlParser(Parser):
-    ignore = ["br", "meta", "img", "input", "!DOCTYPE"]
-    #TODO skip script/style content parsing
+    ignore = ["br", "hr", "meta", "img", "input", "!doctype"]
 
     def parse(self):
         return Html(self.do_until(self.parse_element, self.has_ended))
@@ -62,13 +65,28 @@ class HtmlParser(Parser):
     def parse_tag(self):
         self.skip("<")
         self.skip_white_spaces()
+
+        if self.check("!--"): #Comment
+            self.skip("!--")
+            content = self.collect_until(lambda: self.check("-->"))
+            self.skip("-->")
+            return Comment(content)
+
         name = self.collect_until(lambda: self.peek() == ' ' or self.peek() == '>')
         self.skip_white_spaces()
+
         attributes = self.do_until(self.parse_attribute, lambda: self.peek() == '>')
         self.skip(">")
         closing = f"</{name}>"
-        if name.lower().strip() in self.ignore:
+
+        if name.lower().strip() == 'script' or name.lower().strip() == 'style':  #script/style content parsing skip
+            content = self.collect_until(lambda: self.check(closing))
+            self.skip(closing)
+            return Tag(name, attributes, Html([Text(content)]))
+        
+        elif name.lower().strip() in self.ignore:
             return Tag(name, attributes, Html([]))
+        
         else:
             content = Html(self.do_until(self.parse_element, lambda: self.check(closing)))
             self.skip(closing)

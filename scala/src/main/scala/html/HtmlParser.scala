@@ -30,7 +30,7 @@ case object PrintHtml {
 
 class HtmlParser(stream: Iterator[Char]) extends Parser(stream){
 
-  val ignore = Seq("br", "meta", "img", "input")
+  val ignore = Seq("br", "hr", "meta", "img", "input", "!doctype")
 
   def parse(): Html =
     Html(doUntil(parseElement(), hasEnded))
@@ -39,10 +39,13 @@ class HtmlParser(stream: Iterator[Char]) extends Parser(stream){
     skip("<")
     skipWhiteSpaces
     val name = collectUntil(peek == ' ' || peek == '>')
+    // TODO Parse comment
     skipWhiteSpaces
     val attributes = doUntil(parseAttribute, peek == '>')
     skip(">")
     val closing = s"</${name}>"
+
+    // TODO Skip script/style
     if ignore.contains(name.trim().toLowerCase()) then
       Tag(name, attributes, Html(Nil))
     else
