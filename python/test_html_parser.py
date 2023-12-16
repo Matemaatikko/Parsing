@@ -1,4 +1,5 @@
-from html_parser import HtmlParser, PrintHtml
+from html_parser import HtmlParser
+from print_html_ast import print_html
 
 
 class HtmlParserApp:
@@ -8,7 +9,7 @@ class HtmlParserApp:
         content = parser.parse()
         print(content)
         print("\n\n==========================\n")
-        print(PrintHtml.apply(content))
+        print(print_html(content))
 
 
 class ExampleHtml:

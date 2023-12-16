@@ -16,7 +16,7 @@ class Element:
 class Tag(Element):
     name: str
     attributes: List['Attribute']
-    content: Html
+    content: Html | None
 
 @dataclass
 class Text(Element):
@@ -30,30 +30,6 @@ class Comment(Element):
 class Attribute:
     name: str
     content: Optional[str]
-
-
-class PrintHtml:
-    @staticmethod
-    def apply(html):
-        return "".join(PrintHtml.print_elem(element) for element in html.elements)
-
-    @staticmethod
-    def print_elem(element):
-        if isinstance(element, Tag):
-            return f"<{element.name} {PrintHtml.print_attributes(element.attributes)}>{PrintHtml.apply(element.content)}</{element.name}>"
-        elif isinstance(element, Text):
-            return element.value
-
-    @staticmethod
-    def print_attributes(attributes):
-        return " ".join(PrintHtml.print_attribute(attribute) for attribute in attributes)
-
-    @staticmethod
-    def print_attribute(attribute):
-        if attribute.content:
-            return f'{attribute.name}="{attribute.content}"'
-        else:
-            return attribute.name
 
 
 class HtmlParser(Parser):
@@ -85,7 +61,7 @@ class HtmlParser(Parser):
             return Tag(name, attributes, Html([Text(content)]))
         
         elif name.lower().strip() in self.ignore:
-            return Tag(name, attributes, Html([]))
+            return Tag(name, attributes, None)
         
         else:
             content = Html(self.do_until(self.parse_element, lambda: self.check(closing)))
